@@ -1,37 +1,51 @@
-import {Composition} from 'remotion';
-import {HelloWorld} from './HelloWorld';
-import {Logo} from './HelloWorld/Logo';
+// Root.tsx
+import React, { useEffect, useState } from 'react';
+import { Composition } from 'remotion';
+import { HelloWorld } from './HelloWorld';
 
-// Each <Composition> is an entry in the sidebar!
+const audioUrl = 'http://d3d7iaj1xyzes9.cloudfront.net/72b6ae236d09053aae20f29e284bf4baf13b8c05_0IymPVXGJe-96.mp3'; // Replace this with the URL of your audio file
+
+const getAudioDuration = async (url: string): Promise<number> => {
+  return new Promise((resolve) => {
+    const audio = new Audio(url);
+    audio.addEventListener('loadedmetadata', () => {
+      resolve(audio.duration);
+    });
+  });
+};
 
 export const RemotionRoot: React.FC = () => {
-	return (
-		<>
-			<Composition
-				// You can take the "id" to render a video:
-				// npx remotion render src/index.ts <id> out/video.mp4
-				id="HelloWorld"
-				component={HelloWorld}
-				durationInFrames={150}
-				fps={30}
-				width={1920}
-				height={1080}
-				// You can override these props for each render:
-				// https://www.remotion.dev/docs/parametrized-rendering
-				defaultProps={{
-					titleText: 'Welcome to Remotion',
-					titleColor: 'black',
-				}}
-			/>
-			{/* Mount any React component to make it show up in the sidebar and work on it individually! */}
-			<Composition
-				id="OnlyLogo"
-				component={Logo}
-				durationInFrames={150}
-				fps={30}
-				width={1920}
-				height={1080}
-			/>
-		</>
-	);
+  const [durationInFrames, setDurationInFrames] = useState<number | null>(null);
+	const [audioDuration, setAudioDuration] = useState<number | null>(null);
+
+	useEffect(() => {
+    const fetchAudioDuration = async () => {
+      const duration = await getAudioDuration(audioUrl);
+      setAudioDuration(duration);
+      setDurationInFrames(Math.ceil(duration * 30)); // Assuming 30fps
+    };
+
+    fetchAudioDuration();
+  }, []);
+
+  if (durationInFrames === null || audioDuration === null) {
+    return <div>Loading audio duration...</div>;
+  }
+
+  return (
+    <>
+      <Composition
+        id="HelloWorld"
+        component={HelloWorld}
+        durationInFrames={durationInFrames}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          audioUrl,
+					audioDuration,
+        }}
+      />
+    </>
+  );
 };
